@@ -1,0 +1,186 @@
+---
+title: "Machine Learning Assignment"
+author: "Bryan Victor"
+date: "November 19, 2015"
+output: html_document
+---
+
+
+The following code builds and cross validates a a predictive model using machine learning.  The training data set was first loaded and variables with near zero values and high levels of missingness were removed.
+
+The training data was then subset into a training set and test set so that the accuracy of the model could be assess prior to using it to predict values from the original test set.
+
+
+
+```{r Load Data}
+
+setwd("~/Desktop/Git/MachineLearning")
+library(dplyr)
+library(caret)
+
+Train <- read.csv("pml-training.csv")
+load("predictiveTree.RData") #Loads saved model to allow for knitting
+load("randomForest.RData")
+
+```
+
+
+
+```{r Remove variables with large amounts of missing data}
+
+nsv <- nearZeroVar(Train, saveMetrics = TRUE)
+nsv_1 <- as.data.frame(cbind(row_names = as.character(row.names(nsv)), nsv))
+nsv_1 <- filter(nsv_1, nzv==TRUE)
+
+#Remove near zero variables
+
+Train_nsv <- select(Train, 
+                -new_window,
+                -kurtosis_roll_belt,
+                -kurtosis_picth_belt,
+                -kurtosis_yaw_belt,
+                -skewness_roll_belt,
+                -skewness_roll_belt.1,
+                -skewness_yaw_belt,
+                -max_yaw_belt,
+                -min_yaw_belt,
+                -amplitude_yaw_belt,
+                -avg_roll_arm,
+                -stddev_roll_arm,
+                -var_roll_arm,
+                -avg_pitch_arm,
+                -stddev_pitch_arm,
+                -var_pitch_arm,
+                -avg_yaw_arm,
+                -stddev_yaw_arm,
+                -var_yaw_arm,
+                -kurtosis_roll_arm,
+                -kurtosis_picth_arm,
+                -kurtosis_yaw_arm,
+                -skewness_roll_arm,
+                -skewness_pitch_arm,
+                -skewness_yaw_arm,
+                -max_roll_arm,
+                -min_roll_arm,
+                -min_pitch_arm,
+                -amplitude_roll_arm,
+                -amplitude_pitch_arm,
+                -kurtosis_roll_dumbbell,
+                -kurtosis_picth_dumbbell,
+                -kurtosis_yaw_dumbbell,
+                -skewness_roll_dumbbell,
+                -skewness_pitch_dumbbell,
+                -skewness_yaw_dumbbell,
+                -max_yaw_dumbbell,
+                -min_yaw_dumbbell,
+                -amplitude_yaw_dumbbell,
+                -kurtosis_roll_forearm,
+                -kurtosis_picth_forearm,
+                -kurtosis_yaw_forearm,
+                -skewness_roll_forearm,
+                -skewness_pitch_forearm,
+                -skewness_yaw_forearm,
+                -max_roll_forearm,
+                -max_yaw_forearm,
+                -min_roll_forearm,
+                -min_yaw_forearm,
+                -amplitude_roll_forearm,
+                -amplitude_yaw_forearm,
+                -avg_roll_forearm,
+                -stddev_roll_forearm,
+                -var_roll_forearm,
+                -avg_pitch_forearm, 
+                -stddev_pitch_forearm,
+                -var_pitch_forearm,
+                -avg_yaw_forearm,
+                -stddev_yaw_forearm,
+                -var_yaw_forearm)
+
+#Remove variables with high rate of NA
+
+Train_clean <- select(Train_nsv,
+                      -max_roll_belt,
+                      -max_picth_belt,
+                      -min_roll_belt,
+                      -min_pitch_belt,
+                      -amplitude_roll_belt,
+                      -amplitude_pitch_belt,
+                      -var_total_accel_belt,
+                      -avg_roll_belt,
+                      -stddev_roll_belt,
+                      -var_roll_belt,
+                      -avg_pitch_belt,
+                      -stddev_pitch_belt,
+                      -var_pitch_belt,
+                      -avg_yaw_belt,
+                      -stddev_yaw_belt,
+                      -var_yaw_belt,
+                      -var_accel_arm,
+                      -max_picth_arm,
+                      -max_yaw_arm,
+                      -min_yaw_arm,
+                      -amplitude_yaw_arm,
+                      -max_roll_dumbbell,
+                      -max_picth_dumbbell,
+                      -min_roll_dumbbell,
+                      -min_pitch_dumbbell,
+                      -amplitude_roll_dumbbell,
+                      -amplitude_pitch_dumbbell,
+                      -var_accel_dumbbell,
+                      -avg_roll_dumbbell,
+                      -stddev_roll_dumbbell,
+                      -var_roll_dumbbell,
+                      -avg_pitch_dumbbell,
+                      -stddev_pitch_dumbbell,
+                      -var_pitch_dumbbell,
+                      -avg_yaw_dumbbell,
+                      -stddev_yaw_dumbbell,
+                      -var_yaw_dumbbell,
+                      -max_picth_forearm,
+                      -min_pitch_forearm,
+                      -amplitude_pitch_forearm,
+                      -var_accel_forearm)
+
+#Remove variables not helpful for prediction
+
+Train_clean <- select(Train_clean,
+                      -X,
+                      -raw_timestamp_part_1,
+                      -raw_timestamp_part_2,
+                      -cvtd_timestamp)
+```
+
+```{r Subsetting}
+
+set.seed(500)
+crossValidate <- createDataPartition(y=Train_clean$classe,
+                               p=0.75, list=FALSE)
+
+training_validate <- Train_clean[crossValidate, ]
+testing_validate <- Train_clean[-crossValidate, ]
+
+#modFitTree <- train(classe~ ., method="rpart", data=training_validate)
+
+#modFitRF <- train(classe ~ ., method="rf", data=training_validate, prox=TRUE)
+
+
+```
+
+##Estimating out of sample error
+
+Cross validation was used to assess two models for quality of prediction and to estimate the out of sample error.
+
+Predictive tree 
+```{r echo=FALSE}
+table(predict(modFitTree, testing_validate), testing_validate$classe)
+```
+
+Random forest
+```{r echo=FALSE}
+
+table(predict(modFitRF, testing_validate), testing_validate$classe)
+```
+
+The random forest model is significantly better at predicting outcomes. Using the cross-validation testing set (n=4904) accuracy was calculated for both models.  The predictive tree model had an accuracy rate of 56.7%, while the random forest model had an accuracy rate of 99.8%.
+
+Based on this cross-validation assessment I would expect the out of sample error in terms of accuracy to be around 95% assuming that there was some level of overfitting on the training data.

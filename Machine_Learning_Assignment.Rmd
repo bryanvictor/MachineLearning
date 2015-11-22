@@ -6,9 +6,9 @@ output: html_document
 ---
 
 
-The following code builds and cross validates a a predictive model using machine learning.  The training data set was first loaded and variables with near zero values and high levels of missingness were removed.
+The following code builds and cross validates a predictive model using machine learning.  The training data set was first loaded and variables with near zero values and high levels of missingness were removed.
 
-The training data was then subset into a training set and test set so that the accuracy of the model could be assess prior to using it to predict values from the original test set.
+The training data was then subset into a training set and test set so that the accuracy of the model could be assessed prior to using it to predict values from the original test set.
 
 
 
